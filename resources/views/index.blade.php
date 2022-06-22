@@ -399,7 +399,7 @@
         function getTasks() {
             $.ajax({
                 type: "GET",
-                url: "http://127.0.0.1:8000/todolist",
+                url: "/todolist",
                 success: function (data) {
                     const tasksElement = document.querySelector(".container-cards");
                     if (data.length > 0) {
