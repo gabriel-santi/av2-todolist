@@ -18,11 +18,8 @@ Route::get('/', function() { //especifico o caminho
     return view('index');   //retorna para o cliente o arquivo especificado pelo parametro de 'view()'
 });
 
-Route::get('/teste', function () { //especifico o caminho 
-    return view('teste');   //retorna para o cliente o arquivo especificado pelo parametro de 'view()'
-});
-
 Route::get('/todolist', TodolistController::class.'@index');
+Route::get('/todolist/{id}', TodolistController::class.'@search');
 Route::post('/todolist', TodolistController::class.'@store');
 Route::put('/todolist/{id}', TodolistController::class.'@update');
 Route::delete('/todolist/{id}', TodolistController::class.'@destroy');
