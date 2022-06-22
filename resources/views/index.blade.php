@@ -91,7 +91,7 @@
             margin: 0 auto;
         }
 
-        #save {
+        .save {
             cursor: pointer;
             width: 20%;
         }
@@ -175,6 +175,10 @@
             color: #fff;
         }
 
+        #deadline{
+            width: 39px;
+        }
+
         .container-cards {
             overflow-y: scroll;
 
@@ -206,7 +210,7 @@
 
         .card {
             border-radius: 3px;
-            background-color: #f3f3f3;
+            background-color: #fff;
             border: 1px solid var(--dark-blue);
 
             padding: 20px;
@@ -251,6 +255,11 @@
             color: var(--dark-blue);
         }
 
+        .card-desc{
+            font-family: Verdana, sans-serif;
+            margin: 10px 0 30px 0;
+        }
+
         .card-options {
             position: absolute;
             top: 0;
@@ -261,20 +270,6 @@
             justify-content: center;
         }
 
-        .card-options button {
-            padding: 10px;
-            background-color: transparent;
-            border: none;
-        }
-
-        .card-options button:hover {
-            background-color: #b0afff;
-        }
-
-        .card-options img {
-            width: 35px;
-        }
-
         .card-date {
             font-family: Verdana, Geneva, Tahoma, sans-serif;
             margin: 0;
@@ -282,12 +277,25 @@
             color: var(--dark-grey);
         }
 
-        .message {
-            margin: 0;
-            color: red;
-            font-size: 14px;
-            display: none;
+        .card-options button {
+            padding: 10px;
+            color: #000747;
+            background-color: transparent;
+            border: none;
+        } 
+
+        .btn-edit{
+            border-right: 1px solid var(--dark-blue) !important;
         }
+
+        .btn-edit:hover{
+            background-color: #b0afff;
+        }
+
+        .btn-delete:hover{
+            background-color: rgba(255, 0, 0, 0.3);
+        }
+
     </style>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"
         integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
@@ -315,10 +323,11 @@
     <div class="overlay-new">
         <form id="form-new" class="task-window">
             <h3>Adicionar tarefa</h3>
-            <input type="text" name="task" id="task" autocomplete="off" placeholder="Título da tarefa" autofocus
+            <input type="text" name="task" id="task" autocomplete="off" placeholder="Título da tarefa"
                 required>
             <textarea id="desc" name="desc" cols="30" rows="10" placeholder="Adicione um descrição" required></textarea>
-            <input type="text" name="deadline" id="deadline" autocomplete="off" placeholder="Adicione um prazo"
+            <label for="deadline">Prazo:</label>
+            <input type="datetime-local" name="deadline" id="deadline" autocomplete="off" placeholder="Adicione um prazo"
                 required>
             <div class="btns">
                 <button class="btn cancel-save">Cancelar</button>
@@ -331,11 +340,11 @@
         <form id="form-edit" class="task-window">
             <h3>Editar tarefa</h3>
             <input type="hidden" id="task-id">
-            <input type="text-edit" name="task" id="task-edit" autocomplete="off" placeholder="Título da tarefa"
-                autofocus required>
+            <input type="text-edit" name="task" id="task-edit" autocomplete="off" placeholder="Título da tarefa" required>
             <textarea id="desc-edit" name="desc" cols="30" rows="10" placeholder="Adicione um descrição"
                 required></textarea>
-            <input type="text" name="deadline" id="deadline-edit" autocomplete="off" placeholder="Prazo" required>
+            <label for="deadline">Prazo:</label>
+            <input type="datetime-local" name="deadline" id="deadline-edit" autocomplete="off" placeholder="Prazo" required>
             <div class="btns">
                 <button class="btn cancel-edit">Cancelar</button>
                 <input type="submit" class="btn save" value="Salvar" id="edit">
@@ -365,53 +374,61 @@
             saveTask();
         });
 
-
+        $('#edit').on('click', () => {
+            edit()
+        })
 
         //FUNCTIONS
+        function formatDate(dateUnformated){
+            
+            // example of date not formated:    2022-06-22T16:42
+            const DateAndHour = dateUnformated.split('T');
+            [date, hour] = DateAndHour;
+            date = date.split('-').reverse().join('/');
+            date = `(${date})`;
+
+            dateFormated = `${hour} ${date}`;
+            return dateFormated;
+        }
+
         function initialyze() {
             getTasks();
         }
+        initialyze()
 
         function getTasks() {
             $.ajax({
                 type: "GET",
                 url: "http://127.0.0.1:8000/todolist",
                 success: function (data) {
-                    console.log(data);
+                    const tasksElement = document.querySelector(".container-cards");
                     if (data.length > 0) {
-                        const tasksElement = $('.container-cards');
                         tasksElement.innerHTML = "";
-                        for (var i = 0; i < data.length; i++) {
-                            try {
-                                tasksElement += `
-                                <div class="card" id="${taskObj.id}">
-                                        <div class="card-text">
-                                            <h4 class="card-title">${taskObj.task}</h4>  
-                                            <p class="card-desc">${taskObj.description}</p>                      
-                                            <p class="card-date">
-                                                <br>
-                                                <b>Prazo:</b> ${taskObj.deadline}</p>
-                                            <p class="message error-edit">*Preencha todos os campos!</p>
-                                        </div >
-                                    <div class="card-options">
-                                        <button class="btn-edit" onclick="openEditModal(${data[i].id})">Editar</button>
-                                        <button class="btn-delete" onclick="deleteTask(${data[i].id})">
-                                            Deletar
-                                        </button>
-                                    </div>
-                                </div >
-                                `
-                            } catch (error) {
-                                console.log(error);
-                            }
+                        for (let i = 0; i < data.length; i++) {
+                                tasksElement.innerHTML += `
+                                    <div class="card">
+                                            <div class="card-text">
+                                                <h4 class="card-title">${data[i].title}</h4>  
+                                                <p class="card-desc">${data[i].description}</p>                      
+                                                <p class="card-date">
+                                                    <b>Prazo:</b> ${data[i].deadline}
+                                                </p>
+                                            </div >
+                                        <div class="card-options">
+                                            <button class="btn-edit" onclick="openEditModal(${data[i].id})">Editar</button>
+                                            <button class="btn-delete" onclick="deleteTask(${data[i].id})">
+                                                Deletar
+                                            </button>
+                                        </div>
+                                    </div >`
                         }
                     } else {
-                        tasksElement.innerHTML = 'No tasks';
+                        tasksElement.innerHTML = 'Adicione alguma tarefa';
                     }
                 },
                 error: function (error) {
                     //alert(`Error ${error}`);
-                    console.log(error);
+                    console.log("error\n",error);
                 }
             })
         }
@@ -419,24 +436,26 @@
         function saveTask() {
             const title = document.getElementById('task').value;
             const desc = document.getElementById('desc').value;
-            const deadline = document.getElementById('deadline').value;
+            let deadline = document.getElementById('deadline').value;
+            deadline = formatDate(deadline);
 
-            $.ajax({
-                type: "POST",
-                url: "/todolist",
-                data: {
-                    title: title,
-                    description: desc,
-                    deadline: deadline
-                },
-                success: function (data) {
-                    console.log(data);
-                    getTasks();
-                },
-                error: function (error) {
-                    alert(`Error ${error}`);
-                }
-            })
+            if(title && desc && deadline){
+                $.ajax({
+                    type: "POST",
+                    url: "/todolist",
+                    data: {
+                        title: title,
+                        description: desc,
+                        deadline: deadline
+                    },
+                    success: function (data) {
+                        getTasks();
+                    },
+                    error: function (error) {
+                        alert(`Error ${error}`);
+                    }
+                })
+            }
         }
 
         function deleteTask(id) {
@@ -444,7 +463,6 @@
                 type: "DELETE",
                 url: `/todolist/${id}`,
                 success: function (data) {
-                    console.log('excluir' + data);
                     getTasks();
                 },
                 error: function (error) {
@@ -454,14 +472,13 @@
         }
 
         function openEditModal(id) {
-            $('#editionModal').modal('show');
+            $('.overlay-edit').show();
             $('#task-id').val(id);
 
             $.ajax({
                 type: "GET",
                 url: `/todolist/${id}`,
                 success: function (data) {
-                    console.log('editar: \n' + data);
                     $('#task-edit').val(data.title);
                     $('#desc-edit').val(data.description);
                     $('#deadline-edit').val(data.deadline);
@@ -473,27 +490,28 @@
         }
 
         function edit() {
-            const title = document.getElementById('task').value;
-            const desc = document.getElementById('desc').value;
-            const deadline = document.getElementById('deadline').value;
+            const title = document.getElementById('task-edit').value;
+            const desc = document.getElementById('desc-edit').value;
+            const deadline = document.getElementById('deadline-edit').value;
             const id = $('#task-id').val();
 
-            $.ajax({
-                type: "PUT",
-                url: `/todolist/${id}`,
-                data: {
-                    title: title,
-                    description: desc,
-                    deadline: deadline
-                },
-                success: function (data) {
-                    console.log(data);
-                    getTasks();
-                },
-                error: function (error) {
-                    alert(`Error ${error}`);
-                }
-            })
+            if(title && desc && deadline){
+                $.ajax({
+                    type: "PUT",
+                    url: `/todolist/${id}`,
+                    data: {
+                        title: title,
+                        description: desc,
+                        deadline: deadline
+                    },
+                    success: function (data) {
+                        getTasks();
+                    },
+                    error: function (error) {
+                        alert(`Error ${error}`);
+                    }
+                })
+            }
         }
     </script>
 </body>
