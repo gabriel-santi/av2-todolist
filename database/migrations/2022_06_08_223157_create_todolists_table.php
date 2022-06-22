@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('todolists', function (Blueprint $table) {
             $table->id()->autoIncrement()->primary()->key();
-            $table->string('task');
+            $table->string('title');
             $table->string('description');
             $table->string('deadline');
             $table->timestamps();

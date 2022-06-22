@@ -24,6 +24,22 @@ class TodolistController extends Controller
     }
 
     /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function search($id)
+    {
+        try{
+            $task = Todolist::findOrFail($id);
+            return response()->json($task, 200);
+        }catch(\Exception $e){
+            return response()->json(['error' => $e->getMessage()],
+             500);
+        }
+    }
+
+    /**
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -35,7 +51,7 @@ class TodolistController extends Controller
         try{
             
             $todolist = new Todolist();
-            $todolist->task = $request->task;
+            $todolist->title = $request->title;
             $todolist->description = $request->description;
             $todolist->deadline = $request->deadline;
             $todolist->save();
@@ -59,7 +75,7 @@ class TodolistController extends Controller
     {
         try {
             $todolist = Todolist::findOrFail($id);
-            $todolist->task = $request->task;
+            $todolist->title = $request->title;
             $todolist->description = $request->description;
             $todolist->deadline = $request->deadline;
             $todolist->save();

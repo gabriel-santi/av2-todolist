@@ -91,7 +91,7 @@
             margin: 0 auto;
         }
 
-        #save{
+        .save {
             cursor: pointer;
             width: 20%;
         }
@@ -110,7 +110,8 @@
             border: 1px solid #fff;
         }
 
-        .overlay {
+        .overlay-edit,
+        .overlay-new {
             width: 100vw;
             height: 100vh;
             top: 0;
@@ -124,11 +125,9 @@
             display: flex;
             align-items: center;
             justify-content: center;
-
-            display: none;
         }
 
-        .new-task-window {
+        .task-window {
             background-color: var(--light-blue);
 
             padding: 50px;
@@ -143,14 +142,14 @@
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.616);
         }
 
-        .new-task-window h3 {
+        .task-window h3 {
             position: relative;
             margin: 0;
             padding: 0;
             color: var(--dark-blue);
         }
 
-        .new-task-window h3::after {
+        .task-window h3::after {
             content: '';
 
             position: absolute;
@@ -163,15 +162,21 @@
             background-color: var(--dark-blue);
         }
 
-        .cancel {
+        .cancel-save,
+        .cancel-edit {
             border: 1px solid red;
             color: red;
         }
 
-        .cancel:hover {
+        .cancel-save:hover,
+        .cancel-edit:hover {
             border: 1px solid #fff;
             background-color: red;
             color: #fff;
+        }
+
+        #deadline{
+            width: 39px;
         }
 
         .container-cards {
@@ -205,7 +210,7 @@
 
         .card {
             border-radius: 3px;
-            background-color: #f3f3f3;
+            background-color: #fff;
             border: 1px solid var(--dark-blue);
 
             padding: 20px;
@@ -250,6 +255,11 @@
             color: var(--dark-blue);
         }
 
+        .card-desc{
+            font-family: Verdana, sans-serif;
+            margin: 10px 0 30px 0;
+        }
+
         .card-options {
             position: absolute;
             top: 0;
@@ -260,20 +270,6 @@
             justify-content: center;
         }
 
-        .card-options button {
-            padding: 10px;
-            background-color: transparent;
-            border: none;
-        }
-
-        .card-options button:hover {
-            background-color: #b0afff;
-        }
-
-        .card-options img {
-            width: 35px;
-        }
-
         .card-date {
             font-family: Verdana, Geneva, Tahoma, sans-serif;
             margin: 0;
@@ -281,17 +277,31 @@
             color: var(--dark-grey);
         }
 
-        .message {
-            margin: 0;
-            color: red;
-            font-size: 14px;
-            display: none;
+        .card-options button {
+            padding: 10px;
+            color: #000747;
+            background-color: transparent;
+            border: none;
+        } 
+
+        .btn-edit{
+            border-right: 1px solid var(--dark-blue) !important;
         }
+
+        .btn-edit:hover{
+            background-color: #b0afff;
+        }
+
+        .btn-delete:hover{
+            background-color: rgba(255, 0, 0, 0.3);
+        }
+
     </style>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"
+        integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
 </head>
 
 <body>
-
     <header>
         <h1>To-do list</h1>
     </header>
@@ -310,208 +320,198 @@
     </section>
 
     <!-- HIDDEN ELEMENTS -->
-    <div class="overlay">
-        <form class="new-task-window">
+    <div class="overlay-new">
+        <form id="form-new" class="task-window">
             <h3>Adicionar tarefa</h3>
-            <input type="text" name="task" id="task" autocomplete="off" placeholder="Título da tarefa" autofocus required>
+            <input type="text" name="task" id="task" autocomplete="off" placeholder="Título da tarefa"
+                required>
             <textarea id="desc" name="desc" cols="30" rows="10" placeholder="Adicione um descrição" required></textarea>
-            <input type="text" name="deadline" id="deadline" autocomplete="off" placeholder="Prazo" required>
-            <p class="message error-add">* Preencha todos os campos antes de salvar!</p>
+            <label for="deadline">Prazo:</label>
+            <input type="datetime-local" name="deadline" id="deadline" autocomplete="off" placeholder="Adicione um prazo"
+                required>
             <div class="btns">
-                <button id="cancel" class="btn cancel">Cancelar</button>
+                <button class="btn cancel-save">Cancelar</button>
                 <input type="submit" class="btn save" value="Salvar" id="save">
+            </div>
+        </form>
+    </div>
+
+    <div class="overlay-edit">
+        <form id="form-edit" class="task-window">
+            <h3>Editar tarefa</h3>
+            <input type="hidden" id="task-id">
+            <input type="text-edit" name="task" id="task-edit" autocomplete="off" placeholder="Título da tarefa" required>
+            <textarea id="desc-edit" name="desc" cols="30" rows="10" placeholder="Adicione um descrição"
+                required></textarea>
+            <label for="deadline">Prazo:</label>
+            <input type="datetime-local" name="deadline" id="deadline-edit" autocomplete="off" placeholder="Prazo" required>
+            <div class="btns">
+                <button class="btn cancel-edit">Cancelar</button>
+                <input type="submit" class="btn save" value="Salvar" id="edit">
             </div>
         </form>
     </div>
     <!-- END HIDDEN ELEMENTS -->
 
     <script>
-        let tasks = [];
-        function renderTasks() {
-            const containerCards = document.querySelector('.container-cards')
-            containerCards.innerHTML = '';
 
-            tasks.forEach(taskObj => {
-                containerCards.innerHTML += `
-                <div class="card" id="${taskObj.id}">
-                        <div class="card-text">
-                            <h4 class="card-title">${taskObj.task}</h4>  
-                            <p class="card-desc">${taskObj.description}</p>                      
-                            <p class="card-date">
-                                <b>Criado:</b> ${taskObj.date}
-                                <br>
-                                <b>Última atualização:</b> ${taskObj.deadline}</p>
-                            <p class="message error-edit">*Preencha todos os campos!</p>
-                        </div >
-                    <div class="card-options">
-                        <button class="btn-edit" onclick="openEditBox(${taskObj.id})">
-                            Editar
-                        </button>
-                        <button class="btn-delete" onclick="removeTask(${taskObj.id})">
-                            Deletar
-                        </button>
-                    </div>
-                </div >
-                `
-            })
-        }
+        //INTERFACE
+        $('.overlay-new').hide();
+        $('.overlay-edit').hide();
 
-        //ELEMENTS TO BE MANIPULATED
-        const buttonAdd = document.querySelector("#add");
-        const buttonCloseModal = document.querySelector('#cancel');
-        const overlay = document.querySelector('.overlay');
-        const inputTask = document.querySelector('#task');
-        const inputDesc = document.querySelector('#desc');
-        const inputDeadline = document.querySelector('#deadline');
-        const AddErrorMessage = document.querySelector('.error-add');
-        const btnSave = document.querySelector('#save');
-
-        //TOGGLE WINDOW FOR ADD TASKS
-        function openAddModal() {
-            overlay.style.display = 'flex';
-            inputTask.focus();
-        }
-
-        function closeAddModal() {
-            overlay.style.display = 'none';
-            inputTask.value = '';
-            inputDesc.value = '';
-            inputDeadline.value = '';
-        }
-
-        buttonAdd.addEventListener('click', openAddModal);
-        buttonCloseModal.addEventListener('click', closeAddModal);
-
-        //VALIDATE ADD INPUTS
-        function validateAddInput() {
-            if (inputTask.value.trim().length > 0 
-            && inputDesc.value.trim().length > 0 
-            && inputDeadline.value.trim().length >0) {
-                addNewTask();
-                closeInvalidAddInput();
-                closeAddModal();
-            } else {
-                showInvalidAddInput()
-            }
-        }
-
-        function showInvalidAddInput() {
-            AddErrorMessage.style.display = 'block';
-        }
-
-        function closeInvalidAddInput() {
-            AddErrorMessage.style.display = 'none';
-        }
-
-        //ADD NEW TASKS
-        function addNewTask() {
-            const task = inputTask.value;
-            const description = inputDesc.value;
-            const dateString = formatDate();
-            const deadline = inputDeadline.value;
-            const id = idGenerator();
-
-            tasks.push({ task, description, date: dateString, deadline, id });
-            renderTasks();
-        }
-
-        function formatDate() {
-            const date = new Date();
-            const year = date.getFullYear();
-            const month = date.getMonth();
-            const day = date.getDate();
-            let minutes = date.getMinutes();
-            let hour = date.getHours();
-
-            if (minutes < 10) {
-                minutes = `0${minutes}`;
-            }
-            if (hour < 10) {
-                hour = `0${hour}`
-            }
-
-            return `${day}/${month}/${year} - ${hour}:${minutes}`
-        }
-
-        function idGenerator() {
-            return Date.now();
-        }
-
-        btnSave.addEventListener('click', validateAddInput);
-        inputTask.addEventListener('keydown', e => {
-            if (e.key == "Enter") {
-                inputDesc.focus();
-            }
+        $('.add').on('click', () => {
+            $('.overlay-new').show();
         })
-        inputDesc.addEventListener('keydown', e => {
-            if(e.key == "Enter"){
-                inputDeadline.focus();
-            }
-        })
-        inputDeadline.addEventListener('keydown', e => {
-            if (e.key == "Enter") {
-                validateAddInput();
-            }
-        })
-        
 
-        //TASK OPTIONS FUNCTIONS ====================================
+        $('.cancel-save').on('click', () => {
+            $('.overlay-new').hide();
+        });
+        $('.cancel-edit').on('click', () => {
+            $('.overlay-edit').hide();
+        });
 
-        function removeTask(id) {
-            tasks = tasks.filter(task => task.id != id);
-            renderTasks();
+        $('#save').on('click', () => {
+            saveTask();
+        });
+
+        $('#edit').on('click', () => {
+            edit()
+        })
+
+        //FUNCTIONS
+        function formatDate(dateUnformated){
+            
+            // example of date not formated:    2022-06-22T16:42
+            const DateAndHour = dateUnformated.split('T');
+            [date, hour] = DateAndHour;
+            date = date.split('-').reverse().join('/');
+            date = `(${date})`;
+
+            dateFormated = `${hour} ${date}`;
+            return dateFormated;
         }
 
-        function openEditBox(id) {
-            const [taskObj] = tasks.filter(task => task.id == id);
-            const cardElement = document.getElementById(`${id}`);
-            const cardTitle = cardElement.querySelector('.card-title');
-            const cardDesc = cardElement.querySelector('.card-desc');
+        function initialyze() {
+            getTasks();
+        }
+        initialyze()
 
-            cardTitle.innerHTML = `<input type='text' class='edit-box-title' value='${taskObj.task}'>`
-            cardDesc.innerHTML = `<textarea class='edit-box-desc' cols='50' rows='5'>${taskObj.description}</textarea>`
-
-            const editTaskElement = cardTitle.querySelector('.edit-box-title');
-            const editDescElement = cardDesc.querySelector('.edit-box-desc');
-            editTaskElement.focus();
-
-            editTaskElement.addEventListener('keydown', e => {
-                if (e.key == 'Enter') {
-                    editDescElement.focus();
-                }
-            })
-
-            editDescElement.addEventListener('keydown', e => {
-                if (e.key == 'Enter') {
-                    if (editTaskElement.value.trim().length > 0 && editDescElement.value.trim().length > 0) {
-                        const task = editTaskElement.value;
-                        const desc = editDescElement.value;
-                        editTask(task, desc, id);
-                        closeInvalidEditError(cardElement);
+        function getTasks() {
+            $.ajax({
+                type: "GET",
+                url: "http://127.0.0.1:8000/todolist",
+                success: function (data) {
+                    const tasksElement = document.querySelector(".container-cards");
+                    if (data.length > 0) {
+                        tasksElement.innerHTML = "";
+                        for (let i = 0; i < data.length; i++) {
+                                tasksElement.innerHTML += `
+                                    <div class="card">
+                                            <div class="card-text">
+                                                <h4 class="card-title">${data[i].title}</h4>  
+                                                <p class="card-desc">${data[i].description}</p>                      
+                                                <p class="card-date">
+                                                    <b>Prazo:</b> ${data[i].deadline}
+                                                </p>
+                                            </div >
+                                        <div class="card-options">
+                                            <button class="btn-edit" onclick="openEditModal(${data[i].id})">Editar</button>
+                                            <button class="btn-delete" onclick="deleteTask(${data[i].id})">
+                                                Deletar
+                                            </button>
+                                        </div>
+                                    </div >`
+                        }
                     } else {
-                        showInvalidEditError(cardElement);
+                        tasksElement.innerHTML = 'Adicione alguma tarefa';
                     }
+                },
+                error: function (error) {
+                    //alert(`Error ${error}`);
+                    console.log("error\n",error);
                 }
             })
         }
 
-        function showInvalidEditError(element) {
-            element.querySelector('.message').style.display = 'block';
+        function saveTask() {
+            const title = document.getElementById('task').value;
+            const desc = document.getElementById('desc').value;
+            let deadline = document.getElementById('deadline').value;
+            deadline = formatDate(deadline);
+
+            if(title && desc && deadline){
+                $.ajax({
+                    type: "POST",
+                    url: "/todolist",
+                    data: {
+                        title: title,
+                        description: desc,
+                        deadline: deadline
+                    },
+                    success: function (data) {
+                        getTasks();
+                    },
+                    error: function (error) {
+                        alert(`Error ${error}`);
+                    }
+                })
+            }
         }
 
-        function closeInvalidEditError(element) {
-            element.querySelector('.message').style.display = 'none';
-        }
-
-        function editTask(task, desc, id) {
-            tasks.forEach(taskObj => {
-                if (taskObj.id == id) {
-                    taskObj.task = task;
-                    taskObj.description = desc;
-                    taskObj.lastChange = formatDate();
+        function deleteTask(id) {
+            $.ajax({
+                type: "DELETE",
+                url: `/todolist/${id}`,
+                success: function (data) {
+                    getTasks();
+                },
+                error: function (error) {
+                    alert(`Error ${error}`);
                 }
-            });
-            renderTasks();
+            })
+        }
+
+        function openEditModal(id) {
+            $('.overlay-edit').show();
+            $('#task-id').val(id);
+
+            $.ajax({
+                type: "GET",
+                url: `/todolist/${id}`,
+                success: function (data) {
+                    $('#task-edit').val(data.title);
+                    $('#desc-edit').val(data.description);
+                    $('#deadline-edit').val(data.deadline);
+                },
+                error: function (error) {
+                    alert(`Error ${error}`);
+                }
+            })
+        }
+
+        function edit() {
+            const title = document.getElementById('task-edit').value;
+            const desc = document.getElementById('desc-edit').value;
+            const deadline = document.getElementById('deadline-edit').value;
+            const id = $('#task-id').val();
+
+            if(title && desc && deadline){
+                $.ajax({
+                    type: "PUT",
+                    url: `/todolist/${id}`,
+                    data: {
+                        title: title,
+                        description: desc,
+                        deadline: deadline
+                    },
+                    success: function (data) {
+                        getTasks();
+                    },
+                    error: function (error) {
+                        alert(`Error ${error}`);
+                    }
+                })
+            }
         }
     </script>
 </body>
